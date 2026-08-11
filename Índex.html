@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Montador Pro - Gestão de Montagem Líder</title>
+    
+    <!-- jsPDF para gerar PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-dim: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        /* Header */
+        header {
+            background: var(--card-bg);
+            box-shadow: var(--shadow-sm);
+            padding: 16px 0;
+            margin-bottom: 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.95);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .nav {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text);
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg);
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .card-subtitle {
+            font-size: 14px;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+            transition: all 0.3s;
+            background: var(--card-bg);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        /* Status */
+        .status {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-aberto {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            color: var(--primary);
+        }
+
+        .status-andamento {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: var(--warning);
+        }
+
+        .status-resolvido {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: var(--success);
+        }
+
+        .status-cancelado {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: var(--danger);
+        }
+
+        /* Photos */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .photo-item {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            background: var(--bg);
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.3s;
+        }
+
+        .photo-item:hover {
+            transform: scale(1.05);
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-remove {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .photo-remove:hover {
+            background: #dc2626;
+            transform: scale(1.1);
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            padding: 32px;
+            border-radius: var(--radius);
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .modal-subtitle {
+            color: var(--text-dim);
+            margin-bottom: 24px;
+        }
+
+        .modal-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .modal-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* Hidden */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--text);
+            color: white;
+            padding: 14px 24px;
+            border-radius: var(--radius-sm);
+            z-index: 1001;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            animation: slideInRight 0.3s;
+            font-weight: 500;
+        }
+
+        .toast.error {
+            background: var(--danger);
+        }
+
+        .toast.success {
+            background: var(--success);
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* List Items */
+        .list-item {
+            padding: 20px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: var(--card-bg);
+        }
+
+        .list-item:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .list-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .list-item-title {
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .list-item-subtitle {
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        /* Actions */
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        /* Detail View */
+        .detail-info {
+            margin: 20px 0;
+        }
+
+        .detail-info p {
+            margin: 12px 0;
+            padding: 12px;
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+        }
+
+        .detail-info strong {
+            color: var(--primary);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-dim);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .nav {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 16px;
+            }
+
+            .modal-content {
+                padding: 24px;
+            }
+        }
+
+        /* Print */
+        @media print {
+            header, .nav, .btn, .actions, .photo-remove {
+                display: none !important;
+            }
+
+            body {
+                background: white;
+            }
+
+            .card {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <div class="logo">🔧 Montador Pro</div>
+            <nav class="nav">
+                <button class="btn btn-ghost" onclick="showSection('dashboard')">🏠 Início</button>
+                <button class="btn btn-ghost" onclick="showSection('montagens')">📋 Montagens</button>
+                <button class="btn btn-ghost" onclick="showSection('assistencias')">🛠️ Assistências</button>
+                <button class="btn btn-ghost" onclick="showSection('backup')">💾 Backup</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Dashboard -->
+        <section id="dashboard">
+            <div class="grid">
+                <div class="card">
+                    <h2 class="card-title">📋 Montagens</h2>
+                    <p class="card-subtitle" id="montagens-count">0 registros</p>
+                    <button class="btn btn-primary" style="margin-top: 16px;" onclick="showSection('montagens')">Ver todas</button>
+                </div>
+                <div class="card">
+                    <h2 class="card-title">🛠️ Assistências</h2>
+                    <p class="card-subtitle" id="assistencias-count">0 registros</p>
+                    <button class="btn btn-primary" style="margin-top: 16px;" onclick="showSection('assistencias')">Ver todas</button>
+                </div>
+                <div class="card">
+                    <h2 class="card-title">📊 Resumo</h2>
+                    <p class="card-subtitle" id="resumo-text">Sem dados</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Montagens -->
+        <section id="montagens" class="hidden">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">📋 Minhas Montagens</h2>
+                    <button class="btn btn-primary" onclick="novaMontagem()">➕ Nova</button>
+                </div>
+                <div id="montagens-list"></div>
+            </div>
+        </section>
+
+        <!-- Nova Montagem -->
+        <section id="nova-montagem" class="hidden">
+            <div class="card">
+                <h2 class="card-title">➕ Nova Montagem</h2>
+                <p class="card-subtitle">Preencha os dados abaixo</p>
+                <form id="form-montagem" onsubmit="salvarMontagem(event)">
+                    <div class="form-group">
+                        <label>Cliente *</label>
+                        <input type="text" class="form-control" id="m-cliente" required placeholder="Nome do cliente">
+                    </div>
+                    <div class="form-group">
+                        <label>Código do Projeto *</label>
+                        <input type="text" class="form-control" id="m-codigo" required placeholder="Ex: PRJ-001">
+                    </div>
+                    <div class="form-group">
+                        <label>Montador *</label>
+                        <input type="text" class="form-control" id="m-montador" required placeholder="Nome do montador">
+                    </div>
+                    <div class="form-group">
+                        <label>Valor do Projeto (R$) *</label>
+                        <input type="number" class="form-control" id="m-valor" step="0.01" required placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select class="form-control" id="m-status">
+                            <option>Aberto</option>
+                            <option>Em andamento</option>
+                            <option>Resolvido</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>📸 Fotos do Projeto</label>
+                        <input type="file" class="form-control" id="m-fotos-input" accept="image/*" multiple>
+                        <div class="photo-grid" id="m-fotos-preview"></div>
+                    </div>
+                    <div class="actions">
+                        <button type="submit" class="btn btn-primary">💾 Salvar</button>
+                        <button type="button" class="btn btn-ghost" onclick="showSection('montagens')">❌ Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Assistências -->
+        <section id="assistencias" class="hidden">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🛠️ Assistências Técnicas</h2>
+                    <button class="btn btn-primary" onclick="novaAssistencia()">➕ Nova</button>
+                </div>
+                <div id="assistencias-list"></div>
+            </div>
+        </section>
+
+        <!-- Nova Assistência -->
+        <section id="nova-assistencia" class="hidden">
+            <div class="card">
+                <h2 class="card-title">➕ Nova Assistência</h2>
+                <p class="card-subtitle">Registre um novo chamado</p>
+                <form id="form-assistencia" onsubmit="salvarAssistencia(event)">
+                    <div class="form-group">
+                        <label>Cliente *</label>
+                        <input type="text" class="form-control" id="a-cliente" required placeholder="Nome do cliente">
+                    </div>
+                    <div class="form-group">
+                        <label>Código do Item *</label>
+                        <input type="text" class="form-control" id="a-codigo" required placeholder="Ex: ITM-001">
+                    </div>
+                    <div class="form-group">
+                        <label>Ambiente *</label>
+                        <input type="text" class="form-control" id="a-ambiente" required placeholder="Ex: Cozinha, Sala...">
+                    </div>
+                    <div class="form-group">
+                        <label>Situação *</label>
+                        <textarea class="form-control" id="a-situacao" rows="4" required placeholder="Descreva a situação encontrada..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Motivo *</label>
+                        <input type="text" class="form-control" id="a-motivo" required placeholder="Ex: Erro de usinagem">
+                    </div>
+                    <div class="form-group">
+                        <label>📸 Fotos do Problema</label>
+                        <input type="file" class="form-control" id="a-fotos-input" accept="image/*" multiple>
+                        <div class="photo-grid" id="a-fotos-preview"></div>
+                    </div>
+                    <div class="actions">
+                        <button type="submit" class="btn btn-primary">💾 Salvar</button>
+                        <button type="button" class="btn btn-ghost" onclick="showSection('assistencias')">❌ Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Backup -->
+        <section id="backup" class="hidden">
+            <div class="card">
+                <h2 class="card-title">💾 Backup e Dados</h2>
+                <p class="card-subtitle">Guarde uma cópia de segurança ou restaure dados</p>
+                <div class="actions">
+                    <button class="btn btn-primary" onclick="baixarBackup()">⬇️ Baixar Backup</button>
+                    <input type="file" id="backup-input" accept=".json" style="display: none;" onchange="restaurarBackup(event)">
+                    <button class="btn btn-secondary" onclick="document.getElementById('backup-input').click()">⬆️ Restaurar Backup</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal de Exportação -->
+    <div id="export-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 class="modal-title">📤 Exportar Relatório</h3>
+            <p class="modal-subtitle">Escolha como deseja enviar ou salvar este relatório</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="exportarPDF()">📄 Gerar PDF</button>
+                <button class="btn btn-secondary" onclick="exportarWhatsApp()">📱 Enviar pelo WhatsApp</button>
+                <button class="btn btn-secondary" onclick="exportarCompartilhar()">🔗 Compartilhar</button>
+            </div>
+            <button class="btn btn-ghost" style="margin-top: 20px;" onclick="fecharExportModal()">❌ Fechar</button>
+        </div>
+    </div>
+
+    <script>
+        // Estado
+        let montagens = [];
+        let assistencias = [];
+        let fotosTemp = [];
+        let itemExport = null;
+
+        // Inicialização
+        window.onload = function() {
+            carregarDados();
+            atualizarDashboard();
+        };
+
+        // Navegação
+        function showSection(sectionId) {
+            document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(sectionId).classList.remove('hidden');
+            
+            if (sectionId === 'montagens') renderMontagens();
+            if (sectionId === 'assistencias') renderAssistencias();
+            if (sectionId === 'dashboard') atualizarDashboard();
+        }
+
+        // Dashboard
+        function atualizarDashboard() {
+            document.getElementById('montagens-count').textContent = montagens.length + ' registros';
+            document.getElementById('assistencias-count').textContent = assistencias.length + ' registros';
+            
+            const totalMontagens = montagens.length;
+            const totalAssistencias = assistencias.length;
+            const montagensResolvidas = montagens.filter(m => m.status === 'Resolvido').length;
+            const assistenciasAbertas = assistencias.filter(a => a.status === 'Aberto').length;
+            
+            document.getElementById('resumo-text').textContent = 
+                `${totalMontagens} montagens (${montagensResolvidas} concluídas) | ${totalAssistencias} assistências (${assistenciasAbertas} abertas)`;
+        }
+
+        // Renderizar Montagens
+        function renderMontagens() {
+            const list = document.getElementById('montagens-list');
+            if (montagens.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <h3>Nenhuma montagem cadastrada</h3>
+                        <p>Clique em "Nova" para registrar sua primeira montagem</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            list.innerHTML = montagens.map(m => `
+                <div class="list-item" onclick="verMontagem(${m.id})">
+                    <div class="list-item-header">
+                        <span class="list-item-title">${m.cliente}</span>
+                        <span class="status status-${m.status.toLowerCase().replace(' ', '-')}">${m.status}</span>
+                    </div>
+                    <div class="list-item-subtitle">📌 Código: ${m.codigo} | Montador: ${m.montador}</div>
+                    ${m.fotos && m.fotos.length > 0 ? `<div class="list-item-subtitle">📸 ${m.fotos.length} foto(s) anexada(s)</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Renderizar Assistências
+        function renderAssistencias() {
+            const list = document.getElementById('assistencias-list');
+            if (assistencias.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🛠️</div>
+                        <h3>Nenhuma assistência cadastrada</h3>
+                        <p>Clique em "Nova" para registrar seu primeiro chamado</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            list.innerHTML = assistencias.map(a => `
+                <div class="list-item" onclick="verAssistencia(${a.id})">
+                    <div class="list-item-header">
+                        <span class="list-item-title">${a.cliente}</span>
+                        <span class="status status-${a.status.toLowerCase().replace(' ', '-')}">${a.status}</span>
+                    </div>
+                    <div class="list-item-subtitle">📌 Código: ${a.codigo} | Ambiente: ${a.ambiente}</div>
+                    ${a.fotos && a.fotos.length > 0 ? `<div class="list-item-subtitle">📸 ${a.fotos.length} foto(s) anexada(s)</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Nova Montagem
+        function novaMontagem() {
+            fotosTemp = [];
+            document.getElementById('form-montagem').reset();
+            document.getElementById('m-fotos-preview').innerHTML = '';
+            showSection('nova-montagem');
+        }
+
+        // Salvar Montagem
+        function salvarMontagem(event) {
+            event.preventDefault();
+            
+            const montagem = {
+                id: Date.now(),
+                cliente: document.getElementById('m-cliente').value,
+                codigo: document.getElementById('m-codigo').value,
+                montador: document.getElementById('m-montador').value,
+                valor: parseFloat(document.getElementById('m-valor').value),
+                status: document.getElementById('m-status').value,
+                fotos: [...fotosTemp],
+                dataCriacao: new Date().toISOString()
+            };
+
+            montagens.push(montagem);
+            salvarDados();
+            toast('Montagem salva com sucesso!', 'success');
+            showSection('montagens');
+        }
+
+        // Nova Assistência
+        function novaAssistencia() {
+            fotosTemp = [];
+            document.getElementById('form-assistencia').reset();
+            document.getElementById('a-fotos-preview').innerHTML = '';
+            showSection('nova-assistencia');
+        }
+
+        // Salvar Assistência
+        function salvarAssistencia(event) {
+            event.preventDefault();
+            
+            const assistencia = {
+                id: Date.now(),
+                cliente: document.getElementById('a-cliente').value,
+                codigo: document.getElementById('a-codigo').value,
+                ambiente: document.getElementById('a-ambiente').value,
+                situacao: document.getElementById('a-situacao').value,
+                motivo: document.getElementById('a-motivo').value,
+                status: 'Aberto',
+                fotos: [...fotosTemp],
+                dataCriacao: new Date().toISOString()
+            };
+
+            assistencias.push(assistencia);
+            salvarDados();
+            toast('Assistência salva com sucesso!', 'success');
+            showSection('assistencias');
+        }
+
+        // Ver Montagem
+        function verMontagem(id) {
+            const m = montagens.find(x => x.id === id);
+            if (!m) return;
+
+            const html = `
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">${m.cliente}</h2>
+                        <span class="status status-${m.status.toLowerCase().replace(' ', '-')}">${m.status}</span>
+                    </div>
+                    
+                    <div class="detail-info">
+                        <p><strong>📌 Código:</strong> ${m.codigo}</p>
+                        <p><strong>🧑 Montador:</strong> ${m.montador}</p>
+                        <p><strong>💰 Valor:</strong> R$ ${m.valor.toFixed(2)}</p>
+                        <p><strong>📅 Data:</strong> ${new Date(m.dataCriacao).toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    
+                    ${m.fotos && m.fotos.length > 0 ? `
+                        <h3 style="margin-top: 24px;">📸 Fotos do Projeto</h3>
+                        <div class="photo-grid">
+                            ${m.fotos.map(f => `<div class="photo-item"><img src="${f}" alt="Foto"></div>`).join('')}
+                        </div>
+                    ` : ''}
+
+                    <div class="actions">
+                        <button class="btn btn-secondary" onclick="abrirExportModal(${m.id}, 'montagem')">📤 Exportar Relatório</button>
+                        <button class="btn btn-ghost" onclick="showSection('montagens')">↩️ Voltar</button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('montagens').innerHTML = html;
+        }
+
+        // Ver Assistência
+        function verAssistencia(id) {
+            const a = assistencias.find(x => x.id === id);
+            if (!a) return;
+
+            const html = `
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">${a.cliente}</h2>
+                        <span class="status status-${a.status.toLowerCase().replace(' ', '-')}">${a.status}</span>
+                    </div>
+                    
+                    <div class="detail-info">
+                        <p><strong>📌 Código:</strong> ${a.codigo}</p>
+                        <p><strong>🏠 Ambiente:</strong> ${a.ambiente}</p>
+                        <p><strong>📝 Situação:</strong> ${a.situacao}</p>
+                        <p><strong>❗ Motivo:</strong> ${a.motivo}</p>
+                        <p><strong>📅 Data:</strong> ${new Date(a.dataCriacao).toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    
+                    ${a.fotos && a.fotos.length > 0 ? `
+                        <h3 style="margin-top: 24px;">📸 Fotos do Problema</h3>
+                        <div class="photo-grid">
+                            ${a.fotos.map(f => `<div class="photo-item"><img src="${f}" alt="Foto"></div>`).join('')}
+                        </div>
+                    ` : ''}
+
+                    <div class="actions">
+                        <button class="btn btn-secondary" onclick="abrirExportModal(${a.id}, 'assistencia')">📤 Exportar Relatório</button>
+                        <button class="btn btn-ghost" onclick="showSection('assistencias')">↩️ Voltar</button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('assistencias').innerHTML = html;
+        }
+
+        // Upload de Fotos
+        document.getElementById('m-fotos-input').addEventListener('change', function(e) {
+            handleFotoUpload(e, 'm-fotos-preview');
+        });
+
+        document.getElementById('a-fotos-input').addEventListener('change', function(e) {
+            handleFotoUpload(e, 'a-fotos-preview');
+        });
+
+        function handleFotoUpload(event, previewId) {
+            const files = event.target.files;
+            const preview = document.getElementById(previewId);
+            
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    fotosTemp.push(e.target.result);
+                    preview.innerHTML += `
+                        <div class="photo-item">
+                            <img src="${e.target.result}" alt="Foto">
+                            <button type="button" class="photo-remove" onclick="removerFoto(this, '${e.target.result}')">×</button>
+                        </div>
+                    `;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function removerFoto(btn, fotoSrc) {
+            fotosTemp = fotosTemp.filter(f => f !== fotoSrc);
+            btn.parentElement.remove();
+        }
+
+        // Exportar
+        function abrirExportModal(id, tipo) {
+            itemExport = { id, tipo };
+            document.getElementById('export-modal').classList.remove('hidden');
+        }
+
+        function fecharExportModal() {
+            document.getElementById('export-modal').classList.add('hidden');
+            itemExport = null;
+        }
+
+        function exportarPDF() {
+            if (!itemExport) return;
+            
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                let item;
+                let tipo = '';
+                
+                if (itemExport.tipo === 'montagem') {
+                    item = montagens.find(x => x.id === itemExport.id);
+                    tipo = 'Montagem';
+                } else {
+                    item = assistencias.find(x => x.id === itemExport.id);
+                    tipo = 'Assistência';
+                }
+                
+                if (!item) {
+                    toast('Item não encontrado!', 'error');
+                    return;
+                }
+                
+                // Cabeçalho
+                doc.setFontSize(20);
+                doc.setTextColor(37, 99, 235);
+                doc.text('Montador Pro', 20, 30);
+                
+                doc.setFontSize(16);
+                doc.setTextColor(100, 116, 139);
+                doc.text(`Relatório de ${tipo}`, 20, 45);
+                
+                // Linha separadora
+                doc.setDrawColor(226, 232, 240);
+                doc.line(20, 50, 190, 50);
+                
+                // Dados
+                doc.setFontSize(12);
+                doc.setTextColor(30, 41, 59);
+                
+                let y = 70;
+                
+                if (tipo === 'Montagem') {
+                    doc.text(`Cliente: ${item.cliente}`, 20, y);
+                    y += 20;
+                    doc.text(`Código: ${item.codigo}`, 20, y);
+                    y += 20;
+                    doc.text(`Montador: ${item.montador}`, 20, y);
+                    y += 20;
+                    doc.text(`Valor: R$ ${item.valor.toFixed(2)}`, 20, y);
+                    y += 20;
+                    doc.text(`Status: ${item.status}`, 20, y);
+                    y += 20;
+                    doc.text(`Data: ${new Date(item.dataCriacao).toLocaleDateString('pt-BR')}`, 20, y);
+                } else {
+                    doc.text(`Cliente: ${item.cliente}`, 20, y);
+                    y += 20;
+                    doc.text(`Código: ${item.codigo}`, 20, y);
+                    y += 20;
+                    doc.text(`Ambiente: ${item.ambiente}`, 20, y);
+                    y += 20;
+                    doc.text(`Situação: ${item.situacao}`, 20, y);
+                    y += 20;
+                    doc.text(`Motivo: ${item.motivo}`, 20, y);
+                    y += 20;
+                    doc.text(`Status: ${item.status}`, 20, y);
+                    y += 20;
+                    doc.text(`Data: ${new Date(item.dataCriacao).toLocaleDateString('pt-BR')}`, 20, y);
+                }
+                
+                // Rodapé
+                doc.setFontSize(10);
+                doc.setTextColor(100, 116, 139);
+                doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, 20, 280);
+                
+                // Salvar
+                doc.save(`relatorio-${tipo.toLowerCase()}-${item.codigo}.pdf`);
+                toast('PDF gerado com sucesso!', 'success');
+            } catch (err) {
+                console.error(err);
+                toast('Erro ao gerar PDF', 'error');
+            }
+            
+            fecharExportModal();
+        }
+
+        function exportarWhatsApp() {
+            if (!itemExport) return;
+            
+            let item;
+            let tipo = '';
+            
+            if (itemExport.tipo === 'montagem') {
+                item = montagens.find(x => x.id === itemExport.id);
+                tipo = 'Montagem';
+            } else {
+                item = assistencias.find(x => x.id === itemExport.id);
+                tipo = 'Assistência';
+            }
+            
+            if (!item) {
+                toast('Item não encontrado!', 'error');
+                return;
+            }
+            
+            let texto = `*Montador Pro - Relatório de ${tipo}*\\n\\n`;
+            
+            if (tipo === 'Montagem') {
+                texto += `• Cliente: ${item.cliente}\\n`;
+                texto += `• Código: ${item.codigo}\\n`;
+                texto += `• Montador: ${item.montador}\\n`;
+                texto += `• Valor: R$ ${item.valor.toFixed(2)}\\n`;
+                texto += `• Status: ${item.status}\\n`;
+                texto += `• Data: ${new Date(item.dataCriacao).toLocaleDateString('pt-BR')}\\n`;
+            } else {
+                texto += `• Cliente: ${item.cliente}\\n`;
+                texto += `• Código: ${item.codigo}\\n`;
+                texto += `• Ambiente: ${item.ambiente}\\n`;
+                texto += `• Situação: ${item.situacao}\\n`;
+                texto += `• Motivo: ${item.motivo}\\n`;
+                texto += `• Status: ${item.status}\\n`;
+                texto += `• Data: ${new Date(item.dataCriacao).toLocaleDateString('pt-BR')}\\n`;
+            }
+            
+            const url = `https://wa.me/?text=${encodeURIComponent(texto)}`;
+            window.open(url, '_blank');
+            
+            toast('WhatsApp aberto!', 'success');
+            fecharExportModal();
+        }
+
+        function exportarCompartilhar() {
+            if (!itemExport) return;
+            
+            let item;
+            let tipo = '';
+            
+            if (itemExport.tipo === 'montagem') {
+                item = montagens.find(x => x.id === itemExport.id);
+                tipo = 'Montagem';
+            } else {
+                item = assistencias.find(x => x.id === itemExport.id);
+                tipo = 'Assistência';
+            }
+            
+            if (!item) {
+                toast('Item não encontrado!', 'error');
+                return;
+            }
+            
+            let texto = `Montador Pro - Relatório de ${tipo}\\n\\n`;
+            
+            if (tipo === 'Montagem') {
+                texto += `Cliente: ${item.cliente}\\n`;
+                texto += `Código: ${item.codigo}\\n`;
+                texto += `Montador: ${item.montador}\\n`;
+                texto += `Valor: R$ ${item.valor.toFixed(2)}\\n`;
+                texto += `Status: ${item.status}\\n`;
+            } else {
+                texto += `Cliente: ${item.cliente}\\n`;
+                texto += `Código: ${item.codigo}\\n`;
+                texto += `Ambiente: ${item.ambiente}\\n`;
+                texto += `Situação: ${item.situacao}\\n`;
+                texto += `Motivo: ${item.motivo}\\n`;
+                texto += `Status: ${item.status}\\n`;
+            }
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: `Relatório ${tipo} - ${item.codigo}`,
+                    text: texto
+                }).then(() => {
+                    toast('Compartilhado com sucesso!', 'success');
+                }).catch(() => {
+                    copiarParaClipboard(texto);
+                });
+            } else {
+                copiarParaClipboard(texto);
+            }
+            
+            fecharExportModal();
+        }
+
+        function copiarParaClipboard(texto) {
+            navigator.clipboard.writeText(texto).then(() => {
+                toast('Texto copiado para clipboard!', 'success');
+            }).catch(() => {
+                toast('Não foi possível compartilhar', 'error');
+            });
+        }
+
+        // Backup
+        function baixarBackup() {
+            const dados = {
+                montagens,
+                assistencias,
+                dataBackup: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `backup-montador-pro-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            toast('Backup baixado com sucesso!', 'success');
+        }
+
+        function restaurarBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const dados = JSON.parse(e.target.result);
+                    if (dados.montagens) montagens = dados.montagens;
+                    if (dados.assistencias) assistencias = dados.assistencias;
+                    salvarDados();
+                    toast('Backup restaurado com sucesso!', 'success');
+                    atualizarDashboard();
+                } catch (err) {
+                    toast('Erro ao restaurar backup!', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Persistência
+        function salvarDados() {
+            localStorage.setItem('montador-pro-montagens', JSON.stringify(montagens));
+            localStorage.setItem('montador-pro-assistencias', JSON.stringify(assistencias));
+        }
+
+        function carregarDados() {
+            const m = localStorage.getItem('montador-pro-montagens');
+            const a = localStorage.getItem('montador-pro-assistencias');
+            
+            if (m) montagens = JSON.parse(m);
+            if (a) assistencias = JSON.parse(a);
+        }
+
+        // Toast
+        function toast(msg, tipo = 'success') {
+            const t = document.createElement('div');
+            t.className = `toast ${tipo}`;
+            t.textContent = msg;
+            document.body.appendChild(t);
+            
+            setTimeout(() => t.remove(), 3000);
+        }
+    </script>
+</body>
+</html>
+
