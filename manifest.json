@@ -1,9 +1,10 @@
 {
-  "name": "Líder - Gestão de Montagem",
-  "short_name": "Líder",
-  "description": "App para gestão de montagens e assistência técnica",
-  "start_url": "/App-montagem/",
-  "scope": "/App-montagem/",
+  "name": "Ed.Democrata",
+  "short_name": "Ed.Democrata",
+  "description": "App para gestão do
+  condominio do Edifício Democrata",
+  "start_url": "/condominio/",
+  "scope": "/Ed.Democrata /",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#007bff",
