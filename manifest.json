@@ -1,8 +1,8 @@
 {
   "name": "Ed.Democrata",
   "short_name": "Ed.Democrata",
-  "description": "App para gestão do
-  condominio do Edifício Democrata",
+  "description": "App para gestao do
+  condominio do Edificio Democrata",
   "start_url": "/condominio/",
   "scope": "/Ed.Democrata /",
   "display": "standalone",
