@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#C57C3A" />
+<meta name="description" content="Portal do Condomínio Ed. Democrata" />
+<title>Ed. Democrata</title>
+<link rel="icon" type="image/png" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<link rel="manifest" href="manifest.json" />
+<style>
+  :root{
+    --cream:#FBF6EC; --card:#FFFFFF; --terracotta:#C57C3A; --terracottaDark:#A6642B;
+    --green:#4B6B3C; --greenDark:#3A5230; --brown:#3B2A1E; --brownSoft:#6B5A4C;
+    --red:#B94A3A; --redSoft:#F5DEDA; --greenSoft:#E3ECDC; --line:#E8DFCF;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--cream);color:var(--brown);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  h1,h2,h3,.serif{font-family:Georgia,"Times New Roman",serif;}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;}
+  input,select,textarea{font-family:inherit;font-size:14px;}
+  .max{max-width:420px;margin:0 auto;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 1px 2px rgba(0,0,0,.03);}
+  .btn{width:100%;color:#fff;font-weight:600;font-size:14px;padding:11px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .btn:active{opacity:.9;}
+  .input{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;background:#fff;color:var(--brown);}
+  .label{color:var(--brownSoft);font-size:12px;font-weight:600;display:block;margin-bottom:4px;}
+  .soft{color:var(--brownSoft);}
+  .row{display:flex;align-items:center;justify-content:space-between;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .tab{flex:1;font-size:12px;font-weight:600;padding:8px 6px;border-radius:10px;white-space:nowrap;}
+  .tabs{display:flex;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px;overflow-x:auto;margin-bottom:14px;}
+  #app{min-height:100vh;display:flex;flex-direction:column;}
+  .topbar{position:sticky;top:0;background:var(--card);border-bottom:1px solid var(--line);z-index:10;}
+  .content{flex:1;width:100%;padding:16px;padding-bottom:32px;}
+  .day{aspect-ratio:1;border-radius:8px;font-size:12px;display:flex;align-items:center;justify-content:center;}
+  .weekday{color:var(--brownSoft);font-size:10px;font-weight:600;text-align:center;padding:4px 0;}
+  .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .spin{animation:spin 1s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .legend-dot{width:12px;height:12px;border-radius:4px;display:inline-block;vertical-align:middle;margin-right:6px;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script type="module">
+/* =========================================================
+   FIREBASE — cole aqui a configuração do SEU projeto
+   (Console Firebase → Configurações → Seus apps → SDK)
+   Isso NÃO é segredo — a segurança fica nas Regras do Firestore.
+========================================================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "COLE_AQUI",
+  authDomain: "COLE_AQUI",
+  projectId: "COLE_AQUI",
+  storageBucket: "COLE_AQUI",
+  messagingSenderId: "COLE_AQUI",
+  appId: "COLE_AQUI",
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+
+async function getData(key, fallback) {
+  try {
+    const snap = await getDoc(doc(db, "condominio", key));
+    return snap.exists() ? snap.data().value : fallback;
+  } catch (e) {
+    console.error("Erro lendo", key, e);
+    return fallback;
+  }
+}
+async function setData(key, value) {
+  await setDoc(doc(db, "condominio", key), { value, updatedAt: Date.now() });
+}
+
+/* =========================================================
+   DADOS / CONSTANTES
+========================================================= */
+const FLOORS = [1, 2, 3, 4, 5];
+const UNITS = [1, 2, 3, 4];
+const APTOS = FLOORS.flatMap(f => UNITS.map(u => `${f}0${u}`));
+const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const WEEKDAYS = ["D","S","T","Q","Q","S","S"];
+
+const DEFAULT_RESIDENTS = Object.fromEntries(APTOS.map(a => [a, a]));
+const DEFAULT_ADMINS = { sindico: "sindico123", subsindico: "subsindico123" };
+const DEFAULT_REGULAMENTO =
+`REGULAMENTO INTERNO — CONDOMÍNIO ED. DEMOCRATA
+
+1. Horário de silêncio: 22h às 8h.
+2. Área de lazer: reservas pelo aplicativo, com até 30 dias de antecedência.
+3. É proibido uso de área comum por terceiros sem acompanhamento do morador.
+4. Animais de estimação devem ser conduzidos com guia nas áreas comuns.
+5. O síndico pode atualizar este regulamento a qualquer momento pelo painel administrativo.`;
+
+const money = v => (Number(v)||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const pad = n => String(n).padStart(2,"0");
+const dateKey = (y,m,d) => `${y}-${pad(m+1)}-${pad(d)}`;
+function todayKey(){ const t=new Date(); return dateKey(t.getFullYear(),t.getMonth(),t.getDate()); }
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* =========================================================
+   ESTADO
+========================================================= */
+let state = {
+  booting: true,
+  session: null,
+  screen: "home",
+  residents: DEFAULT_RESIDENTS,
+  admins: DEFAULT_ADMINS,
+  reservations: {},
+  announcements: [],
+  fees: { mesReferencia: "Agosto/2026", valores: {} },
+  contas: [],
+  regulamento: DEFAULT_REGULAMENTO,
+  loginMode: "morador",
+  loginError: "",
+  cal: (() => { const t = new Date(); return { y: t.getFullYear(), m: t.getMonth() }; })(),
+  selectedDay: null,
+  adminTab: "taxas",
+  busy: false,
+  savedTick: "",
+};
+
+async function loadAll() {
+  const [residents, admins, reservations, announcements, fees, contas, regulamento] = await Promise.all([
+    getData("residents", DEFAULT_RESIDENTS),
+    getData("admins", DEFAULT_ADMINS),
+    getData("reservations", {}),
+    getData("announcements", []),
+    getData("fees", { mesReferencia: "Agosto/2026", valores: {} }),
+    getData("contas", []),
+    getData("regulamento", DEFAULT_REGULAMENTO),
+  ]);
+  Object.assign(state, { residents, admins, reservations, announcements, fees, contas, regulamento, booting: false });
+  render();
+}
+loadAll();
+
+/* =========================================================
+   ÍCONE (traço simplificado do logo)
+========================================================= */
+const SNAIL_SVG = (size=34) => `
+<svg width="${size}" height="${size}" viewBox="0 0 100 100" fill="none">
+  <path d="M10 70 C10 40 35 20 55 20 C75 20 88 35 88 52 C88 66 78 75 66 75 C56 75 50 68 50 60 C50 53 55 48 61 48"
+    stroke="#C57C3A" stroke-width="7" stroke-linecap="round"/>
+  <path d="M10 70 C25 78 70 80 88 68" stroke="#C57C3A" stroke-width="7" stroke-linecap="round"/>
+  <path d="M6 22 C10 14 20 10 30 14" stroke="#4B6B3C" stroke-width="7" stroke-linecap="round"/>
+  <path d="M30 78 C40 84 46 92 44 98" stroke="#4B6B3C" stroke-width="7" stroke-linecap="round"/>
+</svg>`;
+
+/* =========================================================
+   RENDER
+========================================================= */
+function render() {
+  const app = document.getElementById("app");
+  if (state.booting) {
+    app.innerHTML = `<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;">
+      <div class="spin" style="width:28px;height:28px;border:3px solid var(--line);border-top-color:var(--terracotta);border-radius:50%;"></div>
+    </div>`;
+    return;
+  }
+  if (!state.session) {
+    app.innerHTML = renderLogin();
+    wireLogin();
+    return;
+  }
+  app.innerHTML = `
+    <div class="topbar"><div class="max" style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">
+      <button data-action="home" style="display:flex;align-items:center;gap:8px;">
+        ${SNAIL_SVG(30)}
+        <div style="text-align:left;line-height:1.1;">
+          <div class="serif" style="font-weight:700;font-size:15px;">Ed. Democrata</div>
+          <div class="soft" style="font-size:11px;">${state.session.type==="admin" ? "Painel: "+esc(state.session.user) : "Apto "+esc(state.session.apto)}</div>
+        </div>
+      </button>
+      <button data-action="logout" class="soft" style="font-size:12px;display:flex;align-items:center;gap:4px;padding:6px 8px;border-radius:8px;">Sair</button>
+    </div></div>
+    <div class="content max">${renderScreen()}</div>
+  `;
+  wireApp();
+}
+
+function renderLogin() {
+  const opts = APTOS.map(a => `<option value="${a}" ${state._apto===a?"selected":""}>${a}</option>`).join("");
+  return `
+  <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
+    <div style="margin-bottom:28px;display:flex;flex-direction:column;align-items:center;">
+      ${SNAIL_SVG(64)}
+      <h1 class="serif" style="font-size:22px;font-weight:700;margin:10px 0 2px;">Ed. Democrata</h1>
+      <p class="soft" style="font-size:13px;margin:0;">Portal do condomínio</p>
+    </div>
+    <div class="card" style="width:100%;max-width:340px;">
+      <div class="tabs" style="margin-bottom:16px;">
+        <button data-action="login-mode" data-mode="morador" class="tab" style="${state.loginMode==='morador'?'background:var(--terracotta);color:#fff;':'color:var(--brownSoft);'}">Morador</button>
+        <button data-action="login-mode" data-mode="admin" class="tab" style="${state.loginMode==='admin'?'background:var(--terracotta);color:#fff;':'color:var(--brownSoft);'}">Síndico</button>
+      </div>
+      <form id="login-form">
+        ${state.loginMode==="morador" ? `
+          <label class="label">Apartamento</label>
+          <select id="f-apto" class="input" style="margin-bottom:10px;">
+            <option value="">Selecione seu apto</option>${opts}
+          </select>
+        ` : `
+          <label class="label">Usuário</label>
+          <select id="f-user" class="input" style="margin-bottom:10px;">
+            <option value="sindico">Síndico</option>
+            <option value="subsindico">Subsíndico</option>
+          </select>
+        `}
+        <label class="label">Senha</label>
+        <input id="f-senha" type="password" class="input" placeholder="••••••" style="margin-bottom:10px;" />
+        ${state.loginError ? `<p style="color:var(--red);font-size:12px;margin:0 0 8px;">${esc(state.loginError)}</p>` : ""}
+        <button type="submit" class="btn" style="background:var(--terracotta);margin-top:4px;">Entrar</button>
+      </form>
+      ${state.loginMode==="morador" ? `<p class="soft" style="font-size:11px;margin-top:14px;text-align:center;">Senha padrão inicial: o número do apto (ex.: apto 101 → senha 101).</p>` : ""}
+    </div>
+  </div>`;
+}
+
+function renderScreen() {
+  switch (state.screen) {
+    case "home": return renderHome();
+    case "lazer": return renderLazer();
+    case "anuncios": return renderAnuncios();
+    case "contas": return renderContas();
+    case "regulamento": return renderRegulamento();
+    case "painel": return state.session.type==="admin" ? renderPainel() : renderHome();
+    default: return renderHome();
+  }
+}
+
+function renderHome() {
+  const cards = [
+    { k:"lazer", label:"Área de Lazer", desc:"Agendar festas e churrasqueira", color:"var(--terracotta)" },
+    { k:"anuncios", label:"Quadro de Avisos", desc:"Comunicados do condomínio", color:"var(--green)" },
+    { k:"contas", label:"Contas do Condomínio", desc:"Prestação de contas mensal", color:"var(--terracottaDark)" },
+    { k:"regulamento", label:"Regulamento", desc:"Regimento interno", color:"var(--greenDark)" },
+  ];
+  if (state.session.type==="admin") cards.push({ k:"painel", label:"Painel do Síndico", desc:"Lançar taxas e avisos", color:"var(--brown)" });
+  const who = state.session.type==="morador" ? `, apto ${esc(state.session.apto)}` : `, ${esc(state.session.user)}`;
+  return `
+    <h2 class="serif" style="font-size:19px;font-weight:700;margin:6px 0 2px;">Olá${who}</h2>
+    <p class="soft" style="font-size:13px;margin:0 0 16px;">O que você precisa hoje?</p>
+    <div class="grid2">
+      ${cards.map(c => `
+        <button data-action="nav" data-screen="${c.k}" class="card" style="text-align:left;display:flex;flex-direction:column;gap:10px;">
+          <div style="width:38px;height:38px;border-radius:10px;background:${c.color}1A;display:flex;align-items:center;justify-content:center;">
+            <span style="width:10px;height:10px;border-radius:3px;background:${c.color};display:inline-block;"></span>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:700;">${c.label}</div>
+            <div class="soft" style="font-size:11px;margin-top:2px;">${c.desc}</div>
+          </div>
+        </button>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderLazer() {
+  const { y, m } = state.cal;
+  const first = new Date(y, m, 1);
+  const startWeekday = first.getDay();
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const tKey = todayKey();
+  let cells = "";
+  for (let i=0;i<startWeekday;i++) cells += `<div></div>`;
+  for (let d=1; d<=daysInMonth; d++) {
+    const key = dateKey(y,m,d);
+    const reserved = !!state.reservations[key];
+    const isPast = key < tKey;
+    const isSel = state.selectedDay === d;
+    let style = "";
+    if (isPast) style = "color:#C6BCAC;";
+    else if (reserved) style = "background:var(--redSoft);color:var(--red);font-weight:700;";
+    else style = "background:var(--greenSoft);color:var(--greenDark);font-weight:700;";
+    if (isSel) style += "outline:2px solid var(--terracotta);outline-offset:1px;";
+    cells += `<button class="day" ${isPast?"disabled":""} data-action="pick-day" data-day="${d}" style="${style}">${d}</button>`;
+  }
+
+  let detail = "";
+  if (state.selectedDay) {
+    const key = dateKey(y, m, state.selectedDay);
+    const resv = state.reservations[key];
+    const podeCancel = resv && (state.session.type==="admin" || (state.session.type==="morador" && resv.apto===state.session.apto));
+    detail = `<div class="card" style="margin-top:12px;">
+      <div style="font-size:14px;font-weight:700;margin-bottom:8px;">${state.selectedDay} de ${MONTHS[m]} de ${y}</div>
+      ${resv ? `
+        <p class="soft" style="font-size:14px;margin-bottom:12px;">Reservado por <strong style="color:var(--brown);">${esc(resv.nome)}</strong> (apto ${esc(resv.apto)}).</p>
+        ${podeCancel ? `<button data-action="cancelar" class="btn" style="background:var(--redSoft);color:var(--red);">${state.busy?'<span class="spin" style="width:14px;height:14px;border:2px solid var(--red);border-top-color:transparent;border-radius:50%;"></span>':''} Cancelar reserva</button>`
+          : `<p class="soft" style="font-size:12px;">Apenas o morador que reservou (ou o síndico) pode cancelar.</p>`}
+      ` : state.session.type==="morador" ? `
+        <input id="f-nome-reserva" class="input" placeholder="Nome do responsável (apto ${esc(state.session.apto)})" style="margin-bottom:8px;" />
+        <button data-action="reservar" class="btn" style="background:var(--terracotta);">${state.busy?'<span class="spin" style="width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;"></span>':''} Reservar este dia</button>
+      ` : `<p class="soft" style="font-size:14px;">Este dia está livre. Apenas moradores podem reservar.</p>`}
+    </div>`;
+  }
+
+  return `
+    <h2 class="serif" style="font-size:17px;font-weight:700;margin:6px 0 12px;">Área de Lazer</h2>
+    <div class="card">
+      <div class="row" style="margin-bottom:10px;">
+        <button data-action="cal-prev" style="padding:6px;">◀</button>
+        <div style="font-weight:700;font-size:14px;">${MONTHS[m]} ${y}</div>
+        <button data-action="cal-next" style="padding:6px;">▶</button>
+      </div>
+      <div class="calendar-grid" style="margin-bottom:4px;">${WEEKDAYS.map(w=>`<div class="weekday">${w}</div>`).join("")}</div>
+      <div class="calendar-grid">${cells}</div>
+      <div style="display:flex;gap:16px;margin-top:14px;font-size:11px;">
+        <div><span class="legend-dot" style="background:var(--greenSoft);border:1px solid var(--green);"></span><span class="soft">Disponível</span></div>
+        <div><span class="legend-dot" style="background:var(--redSoft);border:1px solid var(--red);"></span><span class="soft">Reservado</span></div>
+      </div>
+    </div>
+    ${detail}
+  `;
+}
+
+function renderAnuncios() {
+  const ordered = [...state.announcements].sort((a,b)=> a.data < b.data ? 1 : -1);
+  return `
+    <h2 class="serif" style="font-size:17px;font-weight:700;margin:6px 0 12px;">Quadro de Avisos</h2>
+    ${ordered.length===0 ? `<p class="soft" style="font-size:14px;">Nenhum aviso publicado ainda.</p>` : ""}
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      ${ordered.map(a => `
+        <div class="card">
+          <div class="row" style="margin-bottom:4px;">
+            <span style="font-size:14px;font-weight:700;">${esc(a.titulo)}</span>
+            <span class="soft" style="font-size:11px;">${esc(a.data)}</span>
+          </div>
+          <p class="soft" style="font-size:14px;white-space:pre-wrap;margin:0;">${esc(a.texto)}</p>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderContas() {
+  const minha = state.session.type==="morador" ? state.fees.valores?.[state.session.apto] : null;
+  const ordered = [...state.contas].sort((a,b)=> a.mes < b.mes ? 1 : -1);
+  let minhaBlock = "";
+  if (state.session.type==="morador") {
+    minhaBlock = `<div class="card" style="margin-bottom:16px;">
+      <div class="soft" style="font-size:12px;margin-bottom:8px;">Minhas taxas — ${esc(state.fees.mesReferencia||"")} — Apto ${esc(state.session.apto)}</div>
+      ${minha ? `
+        <div class="row" style="margin-bottom:6px;"><span class="soft" style="font-size:14px;">Água</span><span style="font-size:14px;font-weight:600;">${money(minha.agua)}</span></div>
+        <div class="row" style="margin-bottom:8px;"><span class="soft" style="font-size:14px;">Taxa de condomínio</span><span style="font-size:14px;font-weight:600;">${money(minha.condominio)}</span></div>
+        <div class="row" style="border-top:1px solid var(--line);padding-top:8px;">
+          <span style="font-size:14px;font-weight:700;">Total</span>
+          <span style="font-size:14px;font-weight:700;">${money((Number(minha.agua)||0)+(Number(minha.condominio)||0))}</span>
+        </div>
+      ` : `<p class="soft" style="font-size:14px;">O síndico ainda não lançou os valores deste mês.</p>`}
+    </div>`;
+  }
+  return `
+    <h2 class="serif" style="font-size:17px;font-weight:700;margin:6px 0 12px;">Contas do Condomínio</h2>
+    ${minhaBlock}
+    <div style="font-size:14px;font-weight:700;margin-bottom:8px;">Prestação de contas geral</div>
+    ${ordered.length===0 ? `<p class="soft" style="font-size:14px;">Nenhuma prestação de contas publicada ainda.</p>` : ""}
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      ${ordered.map(c => `
+        <div class="card">
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px;">${esc(c.mes)}</div>
+          <p class="soft" style="font-size:14px;white-space:pre-wrap;margin:0;">${esc(c.descricao)}</p>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderRegulamento() {
+  return `
+    <h2 class="serif" style="font-size:17px;font-weight:700;margin:6px 0 12px;">Regulamento Interno</h2>
+    <div class="card"><p style="font-size:14px;white-space:pre-wrap;line-height:1.6;margin:0;">${esc(state.regulamento)}</p></div>
+  `;
+}
+
+function renderPainel() {
+  const tabs = [
+    { k:"taxas", label:"Taxas" },
+    { k:"avisos", label:"Avisos" },
+    { k:"contas", label:"Contas" },
+    { k:"regulamento", label:"Regulamento" },
+  ];
+  return `
+    <h2 class="serif" style="font-size:17px;font-weight:700;margin:6px 0 12px;">Painel do Síndico</h2>
+    <div class="tabs">
+      ${tabs.map(t => `<button data-action="admin-tab" data-tab="${t.k}" class="tab" style="${state.adminTab===t.k?'background:var(--brown);color:#fff;':'color:var(--brownSoft);'}">${t.label}</button>`).join("")}
+    </div>
+    ${state.adminTab==="taxas" ? renderPainelTaxas() : ""}
+    ${state.adminTab==="avisos" ? renderPainelAvisos() : ""}
+    ${state.adminTab==="contas" ? renderPainelContas() : ""}
+    ${state.adminTab==="regulamento" ? renderPainelRegulamento() : ""}
+  `;
+}
+
+function renderPainelTaxas() {
+  const v = state.fees.valores || {};
+  const floorsHtml = FLOORS.map(floor => `
+    <div class="card" style="padding:12px;margin-bottom:8px;">
+      <div class="soft" style="font-size:11px;font-weight:600;margin-bottom:8px;">${floor}º andar</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        ${UNITS.map(u => {
+          const apto = `${floor}0${u}`;
+          const av = v[apto] || {};
+          return `
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:12px;font-weight:700;width:34px;">${apto}</span>
+            <input class="input fee-agua" data-apto="${apto}" inputmode="decimal" placeholder="Água" value="${av.agua ?? ""}" style="flex:1;padding:7px 8px;font-size:12px;" />
+            <input class="input fee-cond" data-apto="${apto}" inputmode="decimal" placeholder="Cond." value="${av.condominio ?? ""}" style="flex:1;padding:7px 8px;font-size:12px;" />
+          </div>`;
+        }).join("")}
+      </div>
+    </div>
+  `).join("");
+  return `
+    <div class="card" style="margin-bottom:12px;">
+      <label class="label">Mês de referência</label>
+      <input id="f-mes-ref" class="input" placeholder="Ex.: Agosto/2026" value="${esc(state.fees.mesReferencia||"")}" />
+    </div>
+    ${floorsHtml}
+    <button data-action="salvar-taxas" class="btn" style="background:var(--terracotta);margin-top:8px;">
+      ${state.busy ? '<span class="spin" style="width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;"></span>' : ""}
+      ${state.savedTick==="taxas" ? "Salvo!" : "Salvar taxas de todos os aptos"}
+    </button>
+  `;
+}
+
+function renderPainelAvisos() {
+  const list = state.announcements.map(a => `
+    <div class="card" style="display:flex;justify-content:space-between;gap:8px;padding:12px;">
+      <div><div style="font-size:14px;font-weight:700;">${esc(a.titulo)}</div><div class="soft" style="font-size:11px;">${esc(a.data)}</div></div>
+      <button data-action="remover-aviso" data-id="${a.id}" style="color:var(--red);font-size:12px;">Excluir</button>
+    </div>
+  `).join("");
+  return `
+    <div class="card" style="display:flex;flex-direction:column;gap:8px;">
+      <input id="f-aviso-titulo" class="input" placeholder="Título do aviso" />
+      <textarea id="f-aviso-texto" class="input" rows="4" placeholder="Escreva o comunicado..." style="resize:none;"></textarea>
+      <button data-action="publicar-aviso" class="btn" style="background:var(--green);">
+        ${state.busy ? '<span class="spin" style="width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;"></span>' : ""} Publicar aviso
+      </button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px;">${list}</div>
+  `;
+}
+
+function renderPainelContas() {
+  const list = state.contas.map(c => `
+    <div class="card" style="display:flex;justify-content:space-between;gap:8px;padding:12px;">
+      <div><div style="font-size:14px;font-weight:700;">${esc(c.mes)}</div><div class="soft" style="font-size:12px;margin-top:2px;">${esc((c.descricao||"").slice(0,80))}${(c.descricao||"").length>80?"…":""}</div></div>
+      <button data-action="remover-conta" data-id="${c.id}" style="color:var(--red);font-size:12px;">Excluir</button>
+    </div>
+  `).join("");
+  return `
+    <div class="card" style="display:flex;flex-direction:column;gap:8px;">
+      <input id="f-conta-mes" class="input" placeholder="Mês de referência (ex.: Julho/2026)" />
+      <textarea id="f-conta-desc" class="input" rows="5" placeholder="Receitas, despesas e saldo do mês..." style="resize:none;"></textarea>
+      <button data-action="publicar-conta" class="btn" style="background:var(--terracottaDark);">
+        ${state.busy ? '<span class="spin" style="width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;"></span>' : ""} Publicar prestação de contas
+      </button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px;">${list}</div>
+  `;
+}
+
+function renderPainelRegulamento() {
+  return `
+    <div class="card">
+      <label class="label">Texto do regulamento interno</label>
+      <textarea id="f-regulamento" class="input" rows="12" style="resize:none;">${esc(state.regulamento)}</textarea>
+      <button data-action="salvar-regulamento" class="btn" style="background:var(--greenDark);margin-top:10px;">
+        ${state.busy ? '<span class="spin" style="width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;"></span>' : ""}
+        ${state.savedTick==="regulamento" ? "Salvo!" : "Salvar regulamento"}
+      </button>
+    </div>
+  `;
+}
+
+/* =========================================================
+   EVENTOS
+========================================================= */
+function wireLogin() {
+  document.querySelectorAll('[data-action="login-mode"]').forEach(btn => {
+    btn.onclick = () => { state.loginMode = btn.dataset.mode; state.loginError=""; render(); };
+  });
+  const form = document.getElementById("login-form");
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    state.loginError = "";
+    if (state.loginMode === "morador") {
+      const apto = document.getElementById("f-apto").value;
+      const senha = document.getElementById("f-senha").value;
+      state._apto = apto;
+      if (apto && state.residents[apto] === senha) {
+        state.session = { type: "morador", apto };
+        state.screen = "home";
+      } else {
+        state.loginError = "Apto ou senha inválidos.";
+      }
+    } else {
+      const user = document.getElementById("f-user").value;
+      const senha = document.getElementById("f-senha").value;
+      if (state.admins[user] === senha) {
+        state.session = { type: "admin", user };
+        state.screen = "home";
+      } else {
+        state.loginError = "Usuário ou senha inválidos.";
+      }
+    }
+    render();
+  };
+}
+
+function wireApp() {
+  document.querySelectorAll('[data-action]').forEach(el => {
+    const action = el.dataset.action;
+    if (["login-mode"].includes(action)) return; // handled elsewhere
+    el.onclick = () => handleAction(action, el.dataset);
+  });
+}
+
+async function handleAction(action, data) {
+  switch (action) {
+    case "home": state.screen = "home"; state.selectedDay = null; render(); break;
+    case "nav": state.screen = data.screen; state.selectedDay = null; render(); break;
+    case "logout": state.session = null; state.screen = "home"; render(); break;
+
+    case "cal-prev": case "cal-next": {
+      state.selectedDay = null;
+      let { y, m } = state.cal;
+      m += action==="cal-next" ? 1 : -1;
+      if (m<0){m=11;y--;} if (m>11){m=0;y++;}
+      state.cal = { y, m };
+      render();
+      break;
+    }
+    case "pick-day": state.selectedDay = Number(data.day); render(); break;
+    case "reservar": {
+      const { y, m } = state.cal;
+      const key = dateKey(y, m, state.selectedDay);
+      const nome = document.getElementById("f-nome-reserva")?.value || `Apto ${state.session.apto}`;
+      state.busy = true; render();
+      state.reservations = { ...state.reservations, [key]: { apto: state.session.apto, nome } };
+      await setData("reservations", state.reservations);
+      state.busy = false; state.selectedDay = null; render();
+      break;
+    }
+    case "cancelar": {
+      const { y, m } = state.cal;
+      const key = dateKey(y, m, state.selectedDay);
+      state.busy = true; render();
+      const next = { ...state.reservations };
+      delete next[key];
+      state.reservations = next;
+      await setData("reservations", state.reservations);
+      state.busy = false; state.selectedDay = null; render();
+      break;
+    }
+
+    case "admin-tab": state.adminTab = data.tab; state.savedTick=""; render(); break;
+
+    case "salvar-taxas": {
+      state.busy = true; render();
+      const mesReferencia = document.getElementById("f-mes-ref").value;
+      const valores = { ...(state.fees.valores||{}) };
+      document.querySelectorAll(".fee-agua").forEach(inp => {
+        valores[inp.dataset.apto] = { ...(valores[inp.dataset.apto]||{}), agua: inp.value };
+      });
+      document.querySelectorAll(".fee-cond").forEach(inp => {
+        valores[inp.dataset.apto] = { ...(valores[inp.dataset.apto]||{}), condominio: inp.value };
+      });
+      state.fees = { mesReferencia, valores };
+      await setData("fees", state.fees);
+      state.busy = false; state.savedTick = "taxas"; render();
+      setTimeout(()=>{ state.savedTick=""; render(); }, 1500);
+      break;
+    }
+
+    case "publicar-aviso": {
+      const titulo = document.getElementById("f-aviso-titulo").value.trim();
+      const texto = document.getElementById("f-aviso-texto").value.trim();
+      if (!titulo || !texto) return;
+      state.busy = true; render();
+      const novo = { id:String(Date.now()), titulo, texto, data:new Date().toLocaleDateString("pt-BR") };
+      state.announcements = [novo, ...state.announcements];
+      await setData("announcements", state.announcements);
+      state.busy = false; render();
+      break;
+    }
+    case "remover-aviso": {
+      state.announcements = state.announcements.filter(a => a.id !== data.id);
+      await setData("announcements", state.announcements);
+      render();
+      break;
+    }
+
+    case "publicar-conta": {
+      const mes = document.getElementById("f-conta-mes").value.trim();
+      const descricao = document.getElementById("f-conta-desc").value.trim();
+      if (!mes || !descricao) return;
+      state.busy = true; render();
+      const novo = { id:String(Date.now()), mes, descricao };
+      state.contas = [novo, ...state.contas];
+      await setData("contas", state.contas);
+      state.busy = false; render();
+      break;
+    }
+    case "remover-conta": {
+      state.contas = state.contas.filter(c => c.id !== data.id);
+      await setData("contas", state.contas);
+      render();
+      break;
+    }
+
+    case "salvar-regulamento": {
+      state.busy = true; render();
+      state.regulamento = document.getElementById("f-regulamento").value;
+      await setData("regulamento", state.regulamento);
+      state.busy = false; state.savedTick = "regulamento"; render();
+      setTimeout(()=>{ state.savedTick=""; render(); }, 1500);
+      break;
+    }
+  }
+}
+
+/* PWA: registra o service worker, se existir */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
