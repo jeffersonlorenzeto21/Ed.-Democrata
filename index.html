@@ -81,9 +81,16 @@
 
 <script type="module">
 /* =========================================================
-   FIREBASE — cole aqui a configuração do SEU projeto
-   (Console Firebase → Configurações → Seus apps → SDK)
-   Isso NÃO é segredo — a segurança fica nas Regras do Firestore.
+   // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyDkfXCw344fuRw40HtAQoIhBbcrJSziZHI",
+  authDomain: "ed-democrata-7683b.firebaseapp.com",
+  projectId: "ed-democrata-7683b",
+  storageBucket: "ed-democrata-7683b.firebasestorage.app",
+  messagingSenderId: "216033281352",
+  appId: "1:216033281352:web:863171a156bfcbf30e9f7d",
+  measurementId: "G-6BEWZLTLZJ"
+};
 ========================================================= */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
