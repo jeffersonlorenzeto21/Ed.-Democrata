@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#D9793B" />
+<meta name="theme-color" content="#9A0002" />
 <meta name="description" content="Portal do Condomínio Ed. Democrata" />
 <title>Ed. Democrata</title>
 <link rel="icon" type="image/png" href="icon-192.png" />
@@ -11,22 +11,20 @@
 <link rel="manifest" href="manifest.json" />
 <style>
   :root{
-    /* Paleta escura inspirada no design system enviado:
-       superfícies em cinza-ardósia, laranja como cor primária,
-       bordas finas e "elevação" suave nos cards. */
-    --cream:#20242A;        /* base surface (fundo da página) */
-    --card:#2E333B;         /* raised surface (cards, topo, abas) */
-    --card2:#262A31;        /* inset surface (chips de ícone, campos) */
-    --line:#3D434C;         /* bordas */
-    --terracotta:#D9793B;   /* laranja primário */
-    --terracottaDark:#B8622A;
-    --green:#4FAE7C;
-    --greenDark:#3B8F63;
-    --brown:#F1F3F5;        /* texto principal (claro) */
-    --brownSoft:#98A0AA;    /* texto secundário */
-    --red:#E4585B;
-    --redSoft:rgba(228,88,91,.16);
-    --greenSoft:rgba(79,174,124,.16);
+    /* Paleta Cherry Cola + Cream Vanilla */
+    --cream:#EFE6DE;        /* base surface (fundo da página) — Cream Vanilla */
+    --card:#FFFFFF;         /* raised surface (cards, topo, abas) */
+    --card2:#F7EFE6;        /* inset surface (chips, campos) */
+    --line:#E4D6C9;         /* bordas */
+    --terracotta:#9A0002;   /* Cherry Cola — cor primária */
+    --terracottaDark:#7A0002;
+    --green:#4B8F63;        /* uso pontual: sucesso / "resolvida" */
+    --greenDark:#3B7350;
+    --brown:#2A1512;        /* texto principal (quase preto, base quente) */
+    --brownSoft:#8A756C;    /* texto secundário */
+    --red:#9A0002;          /* erro/alerta = o próprio Cherry Cola */
+    --redSoft:rgba(154,0,2,.10);
+    --greenSoft:rgba(75,143,99,.12);
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;background:var(--cream);color:var(--brown);
@@ -36,20 +34,34 @@
   input,select,textarea{font-family:inherit;font-size:14px;}
   .max{max-width:420px;margin:0 auto;}
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;
-    box-shadow:0 4px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+    box-shadow:0 3px 12px rgba(154,0,2,.08), 0 1px 2px rgba(42,21,18,.04);
     transition:transform .12s ease,box-shadow .12s ease;}
-  .card:active{transform:scale(0.97);box-shadow:0 1px 4px rgba(0,0,0,.4);}
+  .card:active{transform:scale(0.97);box-shadow:0 1px 4px rgba(42,21,18,.08);}
   .thumb{width:64px;height:64px;border-radius:10px;object-fit:cover;border:1px solid var(--line);}
   .badge{display:inline-block;font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;}
   .btn{width:100%;color:#fff;font-weight:600;font-size:14px;padding:11px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px;
-    box-shadow:0 2px 6px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12);}
+    box-shadow:0 2px 6px rgba(154,0,2,.25), inset 0 1px 0 rgba(255,255,255,.2);}
   .btn:active{opacity:.85;transform:scale(0.98);}
   .input{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;background:var(--card2);color:var(--brown);}
-  .input:focus{outline:none;border-color:var(--terracotta);box-shadow:0 0 0 3px rgba(217,121,63,.25);}
+  .input:focus{outline:none;border-color:var(--terracotta);box-shadow:0 0 0 3px rgba(154,0,2,.15);}
   .label{color:var(--brownSoft);font-size:11px;font-weight:700;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;}
   .soft{color:var(--brownSoft);}
   .row{display:flex;align-items:center;justify-content:space-between;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .stack{display:flex;flex-direction:column;gap:12px;}
+  /* Card estilo "faixa" (ribbon), inspirado no infográfico de referência */
+  .stepcard{display:flex;align-items:stretch;width:100%;text-align:left;position:relative;
+    background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;
+    box-shadow:0 3px 12px rgba(154,0,2,.08), 0 1px 2px rgba(42,21,18,.04);
+    transition:transform .12s ease,box-shadow .12s ease;}
+  .stepcard:active{transform:scale(0.98);}
+  .stepcard .ribbon{width:58px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:21px;clip-path:polygon(0 0,100% 0,76% 50%,100% 100%,0 100%);}
+  .stepcard .body{flex:1;padding:13px 16px;display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0;}
+  .stepcard .title{font-size:14px;font-weight:800;color:var(--brown);}
+  .stepcard .desc{font-size:11.5px;color:var(--brownSoft);}
+  .badge-novo{position:absolute;top:9px;right:11px;background:var(--terracotta);color:#fff;font-size:9px;font-weight:700;
+    padding:2px 7px;border-radius:999px;letter-spacing:.03em;z-index:2;}
   .tab{flex:1;font-size:12px;font-weight:600;padding:8px 6px;border-radius:10px;white-space:nowrap;}
   .tabs{display:flex;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px;overflow-x:auto;margin-bottom:14px;}
   #app{min-height:100vh;display:flex;flex-direction:column;}
@@ -61,7 +73,7 @@
   .spin{animation:spin 1s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
   .legend-dot{width:12px;height:12px;border-radius:4px;display:inline-block;vertical-align:middle;margin-right:6px;}
-  ::selection{background:rgba(217,121,63,.35);}
+  ::selection{background:rgba(154,0,2,.18);}
 </style>
 </head>
 <body>
@@ -195,10 +207,10 @@ loadAll();
 const SNAIL_SVG = (size=34) => `
 <svg width="${size}" height="${size}" viewBox="0 0 100 100" fill="none">
   <path d="M10 70 C10 40 35 20 55 20 C75 20 88 35 88 52 C88 66 78 75 66 75 C56 75 50 68 50 60 C50 53 55 48 61 48"
-    stroke="#D9793B" stroke-width="7" stroke-linecap="round"/>
-  <path d="M10 70 C25 78 70 80 88 68" stroke="#D9793B" stroke-width="7" stroke-linecap="round"/>
-  <path d="M6 22 C10 14 20 10 30 14" stroke="#4FAE7C" stroke-width="7" stroke-linecap="round"/>
-  <path d="M30 78 C40 84 46 92 44 98" stroke="#4FAE7C" stroke-width="7" stroke-linecap="round"/>
+    stroke="#9A0002" stroke-width="7" stroke-linecap="round"/>
+  <path d="M10 70 C25 78 70 80 88 68" stroke="#9A0002" stroke-width="7" stroke-linecap="round"/>
+  <path d="M6 22 C10 14 20 10 30 14" stroke="#5C3A2E" stroke-width="7" stroke-linecap="round"/>
+  <path d="M30 78 C40 84 46 92 44 98" stroke="#5C3A2E" stroke-width="7" stroke-linecap="round"/>
 </svg>`;
 
 /* =========================================================
@@ -322,31 +334,29 @@ function backBtn() {
 
 function renderHome() {
   const cards = [
-    { k:"lazer", label:"Área de Lazer", desc:"Agendar festas e churrasqueira", color:"#D9793B", icon:"📅" },
-    { k:"anuncios", label:"Quadro de Avisos", desc:"Comunicados do condomínio", color:"#4FAE7C", icon:"📢" },
-    { k:"assembleias", label:"Assembleias / Reuniões", desc:"Convocações e assembleias extraordinárias", color:"#B8622A", icon:"🏛️", novo:true },
+    { k:"lazer", label:"Área de Lazer", desc:"Agendar festas e churrasqueira", color:"#9A0002", icon:"📅" },
+    { k:"anuncios", label:"Quadro de Avisos", desc:"Comunicados do condomínio", color:"#B23A2E", icon:"📢" },
+    { k:"assembleias", label:"Assembleias / Reuniões", desc:"Convocações e assembleias extraordinárias", color:"#7A0002", icon:"🏛️", novo:true },
   ];
   if (state.session.type==="morador") {
-    cards.push({ k:"boletos", label:"Boletos", desc:"Baixar boleto do mês e anteriores", color:"#3B8F63", icon:"🧾", novo:true });
-    cards.push({ k:"ocorrencias", label:"Ocorrências", desc:"Relatar um problema, com fotos", color:"#E4585B", icon:"⚠️", novo:true });
+    cards.push({ k:"boletos", label:"Boletos", desc:"Baixar boleto do mês e anteriores", color:"#C2504B", icon:"🧾", novo:true });
+    cards.push({ k:"ocorrencias", label:"Ocorrências", desc:"Relatar um problema, com fotos", color:"#6B0000", icon:"⚠️", novo:true });
   }
-  cards.push({ k:"contas", label:"Contas do Condomínio", desc:"Prestação de contas mensal", color:"#B8622A", icon:"💰" });
-  cards.push({ k:"regulamento", label:"Regulamento", desc:"Regimento interno", color:"#3B8F63", icon:"📄" });
-  if (state.session.type==="admin") cards.push({ k:"painel", label:"Painel do Síndico", desc:"Lançar taxas, avisos e boletos", color:"#4C8DFF", icon:"🛡️" });
+  cards.push({ k:"contas", label:"Contas do Condomínio", desc:"Prestação de contas mensal", color:"#A83326", icon:"💰" });
+  cards.push({ k:"regulamento", label:"Regulamento", desc:"Regimento interno", color:"#8C2A2A", icon:"📄" });
+  if (state.session.type==="admin") cards.push({ k:"painel", label:"Painel do Síndico", desc:"Lançar taxas, avisos e boletos", color:"#4A0001", icon:"🛡️" });
   const who = state.session.type==="morador" ? `, apto ${esc(state.session.apto)}` : `, ${esc(state.session.user)}`;
   return `
     <h2 class="serif" style="font-size:19px;font-weight:800;margin:6px 0 2px;">Olá${who}</h2>
     <p class="soft" style="font-size:13px;margin:0 0 16px;">O que você precisa hoje?</p>
-    <div class="grid2">
+    <div class="stack">
       ${cards.map(c => `
-        <button data-action="nav" data-screen="${c.k}" class="card" style="text-align:left;display:flex;flex-direction:column;gap:10px;position:relative;">
-          ${c.novo ? `<span style="position:absolute;top:10px;right:10px;background:var(--terracotta);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:999px;letter-spacing:.03em;">NOVO</span>` : ""}
-          <div style="width:38px;height:38px;border-radius:10px;background:${c.color}22;border:1px solid ${c.color}55;display:flex;align-items:center;justify-content:center;font-size:18px;">
-            ${c.icon}
-          </div>
-          <div>
-            <div style="font-size:13px;font-weight:700;">${c.label}</div>
-            <div class="soft" style="font-size:11px;margin-top:2px;">${c.desc}</div>
+        <button data-action="nav" data-screen="${c.k}" class="stepcard">
+          ${c.novo ? `<span class="badge-novo">NOVO</span>` : ""}
+          <div class="ribbon" style="background:${c.color};">${c.icon}</div>
+          <div class="body">
+            <div class="title">${c.label}</div>
+            <div class="desc">${c.desc}</div>
           </div>
         </button>
       `).join("")}
@@ -368,7 +378,7 @@ function renderLazer() {
     const isPast = key < tKey;
     const isSel = state.selectedDay === d;
     let style = "";
-    if (isPast) style = "color:#565C66;";
+    if (isPast) style = "color:#CBB8AC;";
     else if (reserved) style = "background:var(--redSoft);color:var(--red);font-weight:700;";
     else style = "background:var(--greenSoft);color:var(--greenDark);font-weight:700;";
     if (isSel) style += "outline:2px solid var(--terracotta);outline-offset:1px;";
@@ -819,15 +829,32 @@ function wireDefinirSenha() {
       state.cadastroError = "As senhas não coincidem."; render(); return;
     }
     const apto = state.pendingApto;
-    state.busy = true; render();
-    state.residents = { ...state.residents, [apto]: { senha, email, senhaDefinida: true } };
-    await setData("residents", state.residents);
-    state.busy = false;
-    state.session = { type: "morador", apto };
-    state.pendingApto = null;
-    state.screen = "home";
-    try { history.replaceState({ screen: "home" }, "", "#home"); } catch (e) {}
-    render();
+
+    // Trava o botão sem redesenhar a tela inteira — assim, se der erro,
+    // o que a pessoa digitou continua lá (nada é apagado).
+    const btn = e.target.querySelector('button[type="submit"]');
+    const btnTextoOriginal = btn.textContent;
+    btn.disabled = true;
+    btn.style.opacity = "0.7";
+    btn.textContent = "Salvando...";
+
+    try {
+      const novosResidents = { ...state.residents, [apto]: { senha, email, senhaDefinida: true } };
+      await setData("residents", novosResidents);
+      state.residents = novosResidents;
+      state.session = { type: "morador", apto };
+      state.pendingApto = null;
+      state.screen = "home";
+      try { history.replaceState({ screen: "home" }, "", "#home"); } catch (e2) {}
+      render();
+    } catch (err) {
+      console.error("Erro ao salvar cadastro:", err);
+      state.cadastroError = "Não foi possível salvar. Verifique sua conexão e se as regras do Firestore foram publicadas (veja o LEIA-ME). Tente novamente.";
+      btn.disabled = false;
+      btn.style.opacity = "1";
+      btn.textContent = btnTextoOriginal;
+      render();
+    }
   };
   document.querySelector('[data-action="cancelar-cadastro"]').onclick = () => {
     state.pendingApto = null;
@@ -856,6 +883,17 @@ function goTo(screen) {
 }
 
 async function handleAction(action, data) {
+  try {
+    await handleActionInner(action, data);
+  } catch (err) {
+    console.error("Erro na ação", action, err);
+    state.busy = false;
+    render();
+    alert("Não foi possível salvar. Verifique sua conexão e se as regras do Firestore/Storage foram publicadas (veja o LEIA-ME). Tente novamente.");
+  }
+}
+
+async function handleActionInner(action, data) {
   switch (action) {
     case "home": goTo("home"); break;
     case "nav": goTo(data.screen); break;
